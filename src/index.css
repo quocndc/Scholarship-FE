@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-Bold.otf') format('opentype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-SemiBold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --overlay-backdrop-blur: 0;
+    --card-padding: 1.5rem;
+    --accordion-padding: 1rem;
+    --feedback-padding: var(--card-padding);
+    --toast-padding: 1rem;
+    --display-text-color: theme(colors.gray.950); /* rgb(var(--colors-gray-950) / 1); */
+    --title-text-color: var(--display-text-color);
+    --caption-text-color: theme(colors.gray.500);
+    --body-text-color: theme(colors.gray.700);
+    --dv-primary: theme(colors.primary.600);
+    --dv-secondary: theme(colors.secondary.600);
+    --dv-accent: theme(colors.accent.600);
+    --dv-gray: theme(colors.gray.600);
+    --dv-info: theme(colors.info.600);
+    --dv-success: theme(colors.success.600);
+    --dv-danger: theme(colors.danger.600);
+    --dv-warning: theme(colors.warning.600);
+    --dv-neutral: theme(colors.gray.950);
+    --dv-warning: theme(colors.warning.600);
+    --dv-neutral: theme(colors.gray.950);
+    --card-shadow-opacity: 0.05;
+    --feedback-shadow-opacity: 0.05;
+    --menu-shadow-opacity: 0.05;
+    --accordion-shadow-opacity: 0.05;
+    /* SIDEBAR */
+    --sidebar-background: theme(colors.soft-bg);
+    --sidebar-foreground: var(--display-text-color);
+    --sidebar-primary: theme(colors.primary.600);
+    --sidebar-primary-foreground: theme(colors.primary.50);
+    --sidebar-accent: theme(colors.accent.600);
+    --sidebar-accent-foreground: theme(colors.accent.50);
+    --sidebar-border: var(--ui-border-color);
+    --sidebar-ring: theme(colors.primary.500);
+  }
+
+  /* :root:where(.dark, .dark *) {
+    --body-text-color: theme(colors.gray.300);
+    --display-text-color: #fff;
+    --dv-neutral: #fff;
+    --placeholder-text-color: theme(colors.gray.500);
+    --title-text-color: #fff;
+  } */
+
+  :root {
+    --card-radius: 0.75rem;
+    --feedback-radius: var(--card-radius);
+    --accordion-radius: var(--card-radius);
+    --menu-radius: var(--card-radius);
+    --btn-radius: 0.5rem;
+    --badge-radius: var(--btn-radius);
+    --calendar-radius: var(--btn-radius);
+    --tabs-radius: var(--btn-radius);
+    --input-radius: var(--btn-radius);
+    --avatar-radius: 9999px;
+    --annonce-radius: 9999px;
+  }
+}
+
+body {
+  @apply bg-white relative font-sans antialiased leading-normal;
+}
+body.dark {
+  @apply bg-gray-900;
+}
