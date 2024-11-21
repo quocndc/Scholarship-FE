@@ -10,10 +10,11 @@ import { SchoolarShip } from '@lib/types';
 import { IconCloudUpload, IconFileTypePdf, IconLoader2, IconSend, IconX } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 
-const MAX_UPLOAD_SIZE = 1024 * 1024 * 5; // 3MB
-const ACCEPTED_FILE_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+export const MAX_UPLOAD_SIZE = 1024 * 1024 * 5; // 3MB
+export const ACCEPTED_FILE_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
 
 export const UploadCVSchema = z.object({
   scholarship: z.string().min(3),
@@ -25,7 +26,6 @@ export const UploadCVSchema = z.object({
       return !file || file.size <= MAX_UPLOAD_SIZE;
     }, 'File quá lớn, vui lòng chọn file nhỏ hơn 5MB')
     .refine((file) => {
-      console.log(file?.type);
       return ACCEPTED_FILE_TYPES.includes(file?.type);
     }, 'File không hợp lệ, vui lòng chọn file pdf, jpg, png, jpeg'),
 });
@@ -50,7 +50,6 @@ function UploadCVDialog({ scholarship }: { scholarship: SchoolarShip }) {
         message: err.message,
       });
     });
-    console.log(result);
     if (result) {
       const url = result.payment.checkoutUrl;
       return window.open(url, '_blank');
@@ -62,7 +61,7 @@ function UploadCVDialog({ scholarship }: { scholarship: SchoolarShip }) {
       <Dialog.Trigger asChild>
         <Button.Root intent="primary" className="text-nowrap mx-auto">
           <Button.Label>
-            <Button.Label>Upload CV vào trường này</Button.Label>
+            <Button.Label>Nộp hồ sơ vào trường này</Button.Label>
           </Button.Label>
         </Button.Root>
       </Dialog.Trigger>
@@ -75,7 +74,14 @@ function UploadCVDialog({ scholarship }: { scholarship: SchoolarShip }) {
             Bạn muốn xem xét hồ sơ của mình có phù hợp với học bổng này không? Hãy gửi CV của bạn cho chúng tôi để nhận tư vấn từ chuyên gia
           </Dialog.Description>
           <Form {...form}>
-            <form className="mt-4 space-y-4" onSubmit={form.handleSubmit(onSubmit, (e) => console.log(e))}>
+            <form
+              className="mt-4 space-y-4"
+              onSubmit={form.handleSubmit(onSubmit, (e) => {
+                Object.values(e).forEach((error) => {
+                  toast.error(error.message);
+                });
+              })}
+            >
               <input type="hidden" {...form.register('scholarship')} value={scholarship._id} />
               <FormField
                 control={form.control}
