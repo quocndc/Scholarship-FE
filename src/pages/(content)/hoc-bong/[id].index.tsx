@@ -51,7 +51,12 @@ function SchoolarshipDetails() {
               <CarouselContent className="max-w-sm">
                 {data.image.map((image, i) => (
                   <CarouselItem key={image}>
-                    <img key={i} src={image} alt={data.name} className="w-full lg:w-[60vw] h-full object-cover mx-auto rounded-card max-w-[60vw]" />
+                    <img
+                      key={image}
+                      src={image}
+                      alt={data.name}
+                      className="w-full lg:w-[60vw] h-full object-cover mx-auto rounded-card max-w-[60vw]"
+                    />
                   </CarouselItem>
                 ))}
               </CarouselContent>
@@ -66,19 +71,21 @@ function SchoolarshipDetails() {
           )}
         </div>
         <div className="flex flex-wrap gap-2">
-          {data.major.map((major, i) => (
-            <Badge key={i} variant="outlined" color="primary">
+          {data.major.map((major) => (
+            <Badge key={major} variant="outlined" color="primary">
+              #{major}
+            </Badge>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {data.level.map((major) => (
+            <Badge key={major} variant="outlined" intent="secondary">
               #{major}
             </Badge>
           ))}
         </div>
         <div>
           <MdxPreview>{data?.description}</MdxPreview>
-        </div>
-        <div className="flex gap-4 items-center">
-          <Button.Root className="mx-auto">
-            <Button.Label>Đăng ký Ngay (Chỉ còn {data?.quantity} chỗ)</Button.Label>
-          </Button.Root>
         </div>
       </section>
       <section className="sticky top-0 py-3 h-fit space-y-5 bg-soft-bg p-3 min-h-screen">
@@ -101,12 +108,12 @@ function SchoolarshipDetails() {
             <Await resolve={Promise.all([...related])} errorElement={<p>Error loading package location!</p>}>
               {(packageLocation) => {
                 const related = _.uniqBy<SchoolarShip>(
-                  _.flatten<SchoolarShip>(packageLocation).filter((a) => a._id === data._id),
+                  _.flatten<SchoolarShip>(packageLocation).filter((a) => a._id !== data._id),
                   '_id'
                 );
 
                 return related.map((scholarship: SchoolarShip, i) => (
-                  <Card variant="outlined" className="px-0 py-0">
+                  <Card variant="outlined" className="px-0 py-0" key={scholarship._id}>
                     <Link key={scholarship._id} to={`/hoc-bong/${scholarship._id}`}>
                       <img src={scholarship.image[0]} alt={scholarship.name} className="w-full h-40 object-cover rounded-t-md" />
                       <div className="p-3">
