@@ -1,19 +1,19 @@
-import Tabs from '@components/tailus-ui/tabs';
+import Tabs from '@components/tailus-ui/Tabs';
 import { cn } from '@lib/utils';
 import React, { useLayoutEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-const items = [
-  {
-    label: 'Account',
-    path: '/profile',
-  },
-  {
-    label: 'CV đã nộp',
-    path: '/profile/cv',
-  },
-];
 
 function LayoutTabs({ className, ...props }: React.ComponentPropsWithoutRef<typeof Tabs.Root>) {
+  const items = [
+    {
+      label: 'Account',
+      path: '/profile',
+    },
+    {
+      label: 'CV đã nộp',
+      path: '/profile/cv',
+    },
+  ];
   const path = useLocation().pathname;
   const spanRef = useRef<HTMLSpanElement>(null);
   const go = useNavigate();
