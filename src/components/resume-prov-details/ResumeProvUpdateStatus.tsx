@@ -1,18 +1,18 @@
 import StatusBadge from '@components/resume-details/StatusBadge';
-import { useGetResumeDetails } from '@components/resume-details/useGetResumeDetails';
+import { useGetResumeProvDetails } from '@components/resume-prov-details/useGetResumeDetails';
 import Button from '@components/tailus-ui/Button';
 import Card from '@components/tailus-ui/Card';
-import { Form, FormField, FormItem, FormLabel, FormMessage, InputForm, SelectForm, SelectItem } from '@components/tailus-ui/form';
+import { Form, FormField, FormItem, FormLabel, FormMessage, SelectForm, SelectItem } from '@components/tailus-ui/form';
+import { TextAreaForm } from '@components/tailus-ui/form/TextareForm';
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@components/tailus-ui/Sheet';
 import { Caption, Link, Text } from '@components/tailus-ui/typography';
 import { ACCEPTED_FILE_TYPES, MAX_UPLOAD_SIZE } from '@components/upload-cv/UploadCVDialog';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useUser } from '@lib/auth';
-import { Resume, ResumeStatus } from '@lib/types';
+import { ResumeProv, ResumeProvStatus, ResumeStatus } from '@lib/types';
 import { type DialogProps } from '@radix-ui/react-dialog';
 import { IconCloudUpload, IconFileTypePdf, IconX } from '@tabler/icons-react';
 import { useEffect, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
 export const UpdateResumeStatusSchema = z.object({
@@ -37,21 +37,21 @@ export const UpdateResumeStatusSchema = z.object({
 export type UpdateResumeStatusSchema = z.infer<typeof UpdateResumeStatusSchema>;
 
 type ResumeDetailPanel = {
-  item?: Pick<Resume, '_id' | 'status'>;
+  item?: Pick<ResumeProv, '_id' | 'status'>;
   onSubmit: (data: UpdateResumeStatusSchema) => void;
 } & Omit<DialogProps, 'children'>;
 
-export function ResumeUpdateStatusPanel(props: ResumeDetailPanel) {
+export function ResumeProvUpdateStatusPanel(props: ResumeDetailPanel) {
   const { item, ...rest } = props;
   const form = useForm<UpdateResumeStatusSchema>({
     resolver: zodResolver(UpdateResumeStatusSchema),
     defaultValues: {
       id: item?._id,
-      status: ResumeStatus['Hoàn chỉnh hồ sơ'],
+      status: ResumeProvStatus['Lịch phỏng vấn'],
     },
   });
 
-  const { data } = useGetResumeDetails(item?._id ?? '', {
+  const { data } = useGetResumeProvDetails(item?._id ?? '', {
     enabled: !!item && rest.open,
   });
 
@@ -68,22 +68,17 @@ export function ResumeUpdateStatusPanel(props: ResumeDetailPanel) {
     props.onSubmit(data);
   };
 
-  const user = useUser();
-
   const statusOptions = useMemo(() => {
-    if (user?.provider) {
-      return [ResumeStatus['Hồ sơ đã đậu'], ResumeStatus['Hồ sơ chưa đậu']].map((status) => (
-        <SelectItem key={status} value={status}>
-          {status}
-        </SelectItem>
-      ));
-    }
-    return Object.values(ResumeStatus).map((status) => (
+    return Object.values(ResumeProvStatus).map((status) => (
       <SelectItem key={status} value={status}>
         {status}
       </SelectItem>
     ));
-  }, [user?.provider]);
+  }, []);
+
+  const status = useWatch({ control: form.control, name: 'status' });
+  const willNoteable =
+    status === ResumeProvStatus['Hồ sơ thất bại'] || status === ResumeProvStatus['Hồ sơ thành công'] || status === ResumeProvStatus['Lịch phỏng vấn'];
 
   return (
     <Sheet {...rest}>
@@ -91,10 +86,10 @@ export function ResumeUpdateStatusPanel(props: ResumeDetailPanel) {
         <SheetHeader className="sticky top-0 z-[51] bg-white border-b py-7">
           <SheetTitle>Cập nhật trạng thái hồ sơ</SheetTitle>
           <SheetDescription>
-            {data?.status === ResumeStatus['Hồ sơ thành công'] && 'Hồ sơ đã đậu và đã hoàn thành, không thể cập nhật trạng thái'}
+            {data?.status === ResumeProvStatus['Hồ sơ thành công'] && 'Hồ sơ đã đậu và đã hoàn thành, không thể cập nhật trạng thái'}
           </SheetDescription>
         </SheetHeader>
-        <fieldset disabled={data?.status === ResumeStatus['Hồ sơ thành công']}>
+        <fieldset disabled={data?.status === ResumeProvStatus['Hồ sơ thành công']}>
           <SheetBody className="flex-1">
             <Form {...form}>
               <form id="update-status" className="flex-1 space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
@@ -108,7 +103,7 @@ export function ResumeUpdateStatusPanel(props: ResumeDetailPanel) {
                   {statusOptions}
                 </SelectForm>
                 <input type="hidden" {...form.register('id')} />
-                <InputForm control={form.control} name="note" label="Ghi chú" />
+                {willNoteable && <TextAreaForm control={form.control} name="note" label="Ghi chú" />}
                 <FormField
                   control={form.control}
                   name="urlCv"

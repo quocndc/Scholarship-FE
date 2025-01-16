@@ -1,8 +1,10 @@
+import StatusBadge from '@components/resume-details/StatusBadge';
+import { useGetResumeDetails } from '@components/resume-details/useGetResumeDetails';
 import Button from '@components/tailus-ui/Button';
 import Card from '@components/tailus-ui/Card';
 import { Form, FormField, FormItem, FormLabel, FormMessage } from '@components/tailus-ui/form';
 import { Sheet, SheetBody, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@components/tailus-ui/Sheet';
-import { Text } from '@components/tailus-ui/typography';
+import { Caption, Link, Text } from '@components/tailus-ui/typography';
 import { ACCEPTED_FILE_TYPES, MAX_UPLOAD_SIZE } from '@components/upload-cv/UploadCVDialog';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Resume } from '@lib/types';
@@ -40,6 +42,10 @@ export function UpdateResumePanel(props: ResumeDetailPanel) {
     defaultValues: {
       id: item?._id,
     },
+  });
+
+  const { data } = useGetResumeDetails(item?._id ?? '', {
+    enabled: !!item && rest.open,
   });
 
   useEffect(() => {
@@ -116,6 +122,36 @@ export function UpdateResumePanel(props: ResumeDetailPanel) {
               />
             </form>
           </Form>
+          <div className="space-y-2">
+            <Text weight={'bold'}>Lịch sử</Text>
+            <div className="space-y-4">
+              {data?.history.map((h, i) => (
+                <div key={i}>
+                  <div key={i} className="flex items-center gap-2">
+                    <Caption size="xs">{Intl.DateTimeFormat('vi-VN').format(new Date(h.updatedAt))}</Caption>
+                    <div>
+                      <Text size="sm">{h.updatedBy.email}</Text>
+                      <StatusBadge status={h.status} />
+                    </div>
+                  </div>
+                  {h.note && (
+                    <div>
+                      <Text size="sm">
+                        <span className="font-medium">Note:</span> {h.note}
+                      </Text>
+                    </div>
+                  )}
+                  {h.urlCV && (
+                    <div>
+                      <Text size="sm">
+                        <span className="font-medium">URL CV:</span> <Link href={h.urlCV}>{h.urlCV.split('/').pop()}</Link>
+                      </Text>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </SheetBody>
         <SheetFooter className="">
           <Button.Root type="reset" intent="gray" variant="outlined" onClick={() => form.reset()}>
