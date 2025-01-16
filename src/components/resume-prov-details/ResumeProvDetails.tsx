@@ -1,7 +1,6 @@
 import CopyButton from '@components/CopyButton';
 import StatusBadge from '@components/resume-details/StatusBadge';
-import { useGetResumeDetails } from '@components/resume-details/useGetResumeDetails';
-import useGetResumePayment from '@components/resume-details/useGetResumePayment';
+import { useGetResumeProvDetails } from '@components/resume-prov-details/useGetResumeDetails';
 import { Skeleton } from '@components/Skeleton';
 import Button from '@components/tailus-ui/Button';
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@components/tailus-ui/Sheet';
@@ -9,22 +8,19 @@ import { Table, TableBody, TableCell, TableRow } from '@components/tailus-ui/Tab
 import { Tooltip } from '@components/tailus-ui/Tooltip';
 import { Caption, Link, Text } from '@components/tailus-ui/typography';
 import { AdminAvatar } from '@components/user-nav';
-import { Resume } from '@lib/types';
+import { ResumeProv } from '@lib/types';
 import { type DialogProps } from '@radix-ui/react-dialog';
 import { IconArrowRight } from '@tabler/icons-react';
 import { useMemo } from 'react';
 
 type ResumeDetailPanel = {
-  item?: Pick<Resume, '_id'>;
+  item?: Pick<ResumeProv, '_id'>;
 } & Omit<DialogProps, 'children'>;
 
-function ResumeDetailPanel(props: ResumeDetailPanel) {
+export function ResumeProvDetailPanel(props: ResumeDetailPanel) {
   const { item, ...rest } = props;
-  const { isLoading, data } = useGetResumeDetails(item?._id ?? '', {
+  const { isLoading, data } = useGetResumeProvDetails(item?._id ?? '', {
     enabled: !!item && rest.open,
-  });
-  const { data: paymentLink } = useGetResumePayment(item?._id ?? '', {
-    enabled: !!item && rest.open && (data?.status === 'Thanh toán lần 2' || data?.status === 'Hợp đồng thanh toán'),
   });
   const table = useMemo(() => {
     if (!data) return [];
@@ -41,10 +37,10 @@ function ResumeDetailPanel(props: ResumeDetailPanel) {
       },
       {
         label: 'Học bổng',
-        value: data.scholarship.name,
+        value: data.scholarProv.name,
         action: (
           <Tooltip tooltip="Xem chi tiết học bổng">
-            <Button.Root size="xs" intent="gray" variant="soft" href={`/hoc-bong/${data.scholarship._id}`}>
+            <Button.Root size="xs" intent="gray" variant="soft" href={`/nha-cung-cap/${data.provider}/hoc-bong/${data.scholarProv._id}`}>
               <Button.Icon type="only">
                 <IconArrowRight />
               </Button.Icon>
@@ -52,11 +48,7 @@ function ResumeDetailPanel(props: ResumeDetailPanel) {
           </Tooltip>
         ),
       },
-      {
-        label: 'Mã đơn hàng',
-        value: data.orderCode,
-        action: <CopyButton intent="gray" size="xs" variant="soft" content={data.orderCode} />,
-      },
+
       {
         label: 'CV File',
         value: (
@@ -87,19 +79,8 @@ function ResumeDetailPanel(props: ResumeDetailPanel) {
             ),
           }
         : {},
-      paymentLink?.data.data
-        ? {
-            label: 'Link thanh toán',
-            value: (
-              <Link size={'sm'} href={paymentLink.data.data.checkoutUrl} target="_blank">
-                Đi đến trang thanh toán
-              </Link>
-            ),
-            action: <CopyButton intent="gray" size="xs" variant="soft" content={data.orderCode} />,
-          }
-        : null,
     ];
-  }, [data, paymentLink]);
+  }, [data]);
   return (
     <Sheet {...rest}>
       <SheetContent size="lg" className="flex h-full flex-col gap-4 overflow-auto">
@@ -171,5 +152,3 @@ function ResumeDetailPanel(props: ResumeDetailPanel) {
     </Sheet>
   );
 }
-
-export default ResumeDetailPanel;
