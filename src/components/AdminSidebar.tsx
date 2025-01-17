@@ -229,6 +229,7 @@ function AdminSidebar() {
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
+
                 <SidebarMenuItem>
                   <Link to="/admin/provider/resume">
                     <SidebarMenuButton variant="outline" isActive={location.pathname === '/admin/provider/resume'}>
@@ -237,6 +238,18 @@ function AdminSidebar() {
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
+
+                {user.provider && (
+                  <SidebarMenuItem>
+                    <Link to="/admin/provider/resume">
+                      <SidebarMenuButton variant="outline" isActive={location.pathname === '/admin/provider/resume'}>
+                        <IconFileInvoice />
+                        <span>Quản lý hồ sơ</span>
+                      </SidebarMenuButton>
+                    </Link>
+                  </SidebarMenuItem>
+                )}
+
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

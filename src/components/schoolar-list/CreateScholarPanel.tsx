@@ -1,9 +1,8 @@
 import { ContinentOptions } from '@components/schoolar-list/constant';
 import Button from '@components/tailus-ui/Button';
 import Editor from '@components/tailus-ui/editor/editor';
-import { Form, FormField, FormItem, FormLabel, InputForm, SelectForm } from '@components/tailus-ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, InputForm, SelectForm } from '@components/tailus-ui/form';
 import { SwitchForm } from '@components/tailus-ui/form/SwitchForm';
-import { TagInputForm } from '@components/tailus-ui/form/TagInput';
 import Select from '@components/tailus-ui/Select';
 import { Sheet, SheetBody, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@components/tailus-ui/Sheet';
 import { useUploadImage } from '@components/upload/useUploadImage';
@@ -11,8 +10,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { type DialogProps } from '@radix-ui/react-dialog';
 import { IconCheck, IconCloudUpload, IconTrash } from '@tabler/icons-react';
 import { DialogProps as VariantProps } from '@tailus/themer';
+import { TagInput } from 'emblor';
 import { useEffect } from 'react';
-import { useForm, UseFormReturn } from 'react-hook-form';
+import { useFieldArray, useForm, UseFormReturn } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -20,39 +20,40 @@ export const CreateScholarSchema = z.object({
   _id: z.string().optional(),
   name: z.string().min(3).max(255),
   continent: z.string().min(3).max(255),
-  major: z
-    .array(
-      // serve for tag input
-      // it will be converted to string[]
-      z.object({
-        id: z.string().optional(),
-        text: z.string().min(1).max(255),
-      })
-    )
-    .nonempty(),
-  level: z
-    .array(
-      // serve for tag input
-      // it will be converted to string[]
-      z.object({
-        id: z.string().optional(),
-        text: z.string().min(1).max(255),
-      })
-    )
-    .nonempty(),
+  major: z.array(z.string()).nonempty(),
+  level: z.array(z.string()).nonempty(),
   location: z.string().min(3).max(255),
   description: z.string().min(3).max(5000),
   quantity: z.coerce.number().optional(),
   isActive: z.boolean().default(true),
   image: z
-    .array(z.instanceof(File))
-    .refine((files) => files.every((file) => file.type.startsWith('image/')), {
-      message: 'File không phải là ảnh',
+    .array(z.union([z.string().url(), z.instanceof(File)]))
+    .min(1, {
+      message: 'Chưa chọn ảnh',
     })
+    .refine(
+      (files) => {
+        return files.every((file) => {
+          if (typeof file === 'string') return true;
+          return file.type.startsWith('image/');
+        });
+      },
+      {
+        message: 'File không phải là ảnh',
+      }
+    )
     .refine((files) => files.length <= 10, { message: 'Chỉ được tải lên tối đa 10 ảnh' })
-    .refine((files) => files.reduce((acc, file) => acc + file.size, 0) <= 1024 * 1024 * 10, {
-      message: 'Dung lượng ảnh tối đa 10MB',
-    }),
+    .refine(
+      (files) =>
+        files.reduce((acc, file) => {
+          if (typeof file === 'string') return acc;
+          return acc + file.size;
+        }, 0) <=
+        1024 * 1024 * 10,
+      {
+        message: 'Dung lượng ảnh tối đa 10MB',
+      }
+    ),
 });
 export type CreateScholarSchema = z.infer<typeof CreateScholarSchema>;
 
@@ -90,21 +91,7 @@ function CreateScholarPanel(props: CreateScholarPanelProps) {
   });
 
   useEffect(() => {
-    if (!defaultValues) return;
-
-    if (typeof defaultValues?.image?.[0] === 'string') {
-      // if image is string, convert to file
-      const files = defaultValues.image.map((url: any) => {
-        const filename = url.split('/').pop();
-        return new File([filename], filename, { type: 'image/png' });
-      });
-
-      return form.reset({
-        ...defaultValues,
-        image: files,
-      });
-    }
-    return form.reset(defaultValues);
+    form.reset(defaultValues);
   }, [defaultValues, form]);
 
   return (
@@ -128,63 +115,82 @@ function CreateScholarPanel(props: CreateScholarPanelProps) {
                   ))}
                 </SelectForm>
               </div>
-              <TagInputForm control={form.control} name="level" label="Cấp" required />
-              <TagInputForm control={form.control} name="major" label="Ngành học" required />
-              <SwitchForm control={form.control} name="isActive" label="Sử dụng học bổng" />
               <FormField
                 control={form.control}
-                name="image"
+                name={'level'}
                 defaultValue={[] as any}
                 render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel htmlFor={field.name}>Hình ảnh</FormLabel>
-                    <div className="flex flex-wrap gap-2">
-                      <label htmlFor="image" className="size-40 rounded-btn border flex items-center justify-center text-xs text-caption flex-col">
-                        <IconCloudUpload className="size-5" />
-                        <span>Chọn ảnh</span>
-                      </label>
-                      {field.value?.map((file: File) => (
-                        <div key={file.name} className="relative group">
-                          <img
-                            src={URL.createObjectURL(file)}
-                            alt={file.name}
-                            className="size-40 object-cover rounded-btn group-hover:brightness-75 transition-[brightness] duration-300 border"
-                          />
-                          <Button.Root
-                            variant="outlined"
-                            size="xs"
-                            className="absolute top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2 origin-center opacity-0 group-hover:opacity-100"
-                            intent="danger"
-                            onClick={() => {
-                              field.onChange(field.value.filter((f) => f !== file));
-                            }}
-                          >
-                            <Button.Icon type="only">
-                              <IconTrash className="size-3.5" />
-                            </Button.Icon>
-                          </Button.Root>
-                        </div>
-                      ))}
-                    </div>
-                    <input
-                      hidden
-                      id="image"
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={(e) => {
-                        if (e.target.files) {
-                          field.onChange(
-                            [...field.value, ...Array.from(e.target.files)].filter((file, index, self) => {
-                              return index === self.findIndex((f) => f.name === file.name);
-                            })
-                          );
-                        }
-                      }}
-                    />
+                  <FormItem>
+                    <FormLabel>
+                      Cấp
+                      <span className="text-danger-500 ml-1">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <TagInput
+                        styleClasses={{
+                          input: 'placeholder:text-caption rounded-none focus:ring-0 focus-visible:ring-0 focus-visible:border-0 focus:outline-none',
+                          inlineTagsContainer: '!rounded-btn focus:ring-0 focus-visible:ring-0 focus-visible:border-0 focus:outline-none',
+                          tagList: {
+                            container: 'border-red-500',
+                          },
+                          tag: {
+                            body: '!rounded-card bg-soft-bg',
+                          },
+                        }}
+                        activeTagIndex={null}
+                        // eslint-disable-next-line @typescript-eslint/no-empty-function
+                        setActiveTagIndex={() => {}}
+                        tags={field.value.map((v) => ({ id: v, text: v }))}
+                        setTags={(newTags) => {
+                          const value = (newTags as any).map((tag: Record<string, any>) => tag.text);
+                          field.onChange(value);
+                        }}
+                      />
+                    </FormControl>
+
+                    <FormMessage />
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name={'major'}
+                defaultValue={[] as any}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Ngành học
+                      <span className="text-danger-500 ml-1">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <TagInput
+                        styleClasses={{
+                          input: 'placeholder:text-caption rounded-none focus:ring-0 focus-visible:ring-0 focus-visible:border-0 focus:outline-none',
+                          inlineTagsContainer: '!rounded-btn focus:ring-0 focus-visible:ring-0 focus-visible:border-0 focus:outline-none',
+                          tagList: {
+                            container: 'border-red-500',
+                          },
+                          tag: {
+                            body: '!rounded-card bg-soft-bg',
+                          },
+                        }}
+                        activeTagIndex={null}
+                        // eslint-disable-next-line @typescript-eslint/no-empty-function
+                        setActiveTagIndex={() => {}}
+                        tags={field.value.map((v) => ({ id: v, text: v }))}
+                        setTags={(newTags) => {
+                          const value = (newTags as any).map((tag: Record<string, any>) => tag.text);
+                          field.onChange(value);
+                        }}
+                      />
+                    </FormControl>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <SwitchForm control={form.control} name="isActive" label="Sử dụng học bổng" />
+              <ImageForm control={form.control} name="image" label="Ảnh" required />
               <FormField
                 control={form.control}
                 name="description"
@@ -198,11 +204,11 @@ function CreateScholarPanel(props: CreateScholarPanelProps) {
             </form>
           </SheetBody>
           <SheetFooter>
-            <Button.Root form="createform" intent="gray" variant="outlined" onClick={() => form.reset()}>
+            <Button.Root type="reset" form="createform" intent="gray" variant="outlined" onClick={() => form.reset()}>
               <Button.Label>Đặt lại</Button.Label>
             </Button.Root>
             <Button.Root form="createform" type="submit">
-              <Button.Label>Tạo mới</Button.Label>
+              <Button.Label>{defaultValues?._id ? 'Cập nhật' : 'Tạo mới'}</Button.Label>
             </Button.Root>
           </SheetFooter>
         </Form>
@@ -223,6 +229,96 @@ const SelectItem = ({ entry }: { entry: Entry }) => {
       </Select.ItemIndicator>
       <Select.ItemText>{entry.value}</Select.ItemText>
     </Select.Item>
+  );
+};
+
+export const ImageForm = ({ control, name, label, required }: { control: any; name: string; label: string; required?: boolean }) => {
+  const { remove, append } = useFieldArray({
+    control,
+    name,
+  });
+  return (
+    <FormField
+      control={control}
+      name={name}
+      defaultValue={[] as any}
+      render={({ field }) => (
+        <FormItem className="flex flex-col">
+          <FormLabel htmlFor={field.name}>
+            {label}
+            {required && <span className="text-danger-500 ml-1">*</span>}
+          </FormLabel>
+          <div className="flex flex-wrap gap-2">
+            <label htmlFor="image" className="size-40 rounded-btn border flex items-center justify-center text-xs text-caption flex-col">
+              <IconCloudUpload className="size-5" />
+              <span>Chọn ảnh</span>
+            </label>
+            {field.value?.map((file: File | string, index: number) =>
+              typeof file === 'string' ? (
+                <div key={file} className="relative group">
+                  <img
+                    src={file}
+                    alt={file}
+                    className="size-40 object-cover rounded-btn group-hover:brightness-75 transition-[brightness] duration-300 border"
+                  />
+                  <Button.Root
+                    variant="outlined"
+                    size="xs"
+                    className="absolute top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2 origin-center opacity-0 group-hover:opacity-100"
+                    intent="danger"
+                    type="button"
+                    onClick={() => {
+                      remove(index);
+                    }}
+                  >
+                    <Button.Icon type="only">
+                      <IconTrash className="size-3.5" />
+                    </Button.Icon>
+                  </Button.Root>
+                </div>
+              ) : (
+                <div key={file.name} className="relative group">
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt={file.name}
+                    className="size-40 object-cover rounded-btn group-hover:brightness-75 transition-[brightness] duration-300 border"
+                  />
+                  <Button.Root
+                    variant="outlined"
+                    size="xs"
+                    type="button"
+                    className="absolute top-1/2 right-1/2 translate-x-1/2 -translate-y-1/2 origin-center opacity-0 group-hover:opacity-100"
+                    intent="danger"
+                    onClick={() => {
+                      remove(index);
+                    }}
+                  >
+                    <Button.Icon type="only">
+                      <IconTrash className="size-3.5" />
+                    </Button.Icon>
+                  </Button.Root>
+                </div>
+              )
+            )}
+          </div>
+          <input
+            hidden
+            id="image"
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={(e) => {
+              if (e.target.files) {
+                const files = Array.from(e.target.files);
+                files.forEach((file) => {
+                  append(file);
+                });
+              }
+            }}
+          />
+        </FormItem>
+      )}
+    />
   );
 };
 export { CreateScholarPanel };

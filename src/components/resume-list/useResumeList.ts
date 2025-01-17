@@ -1,10 +1,6 @@
-import { getResumeProvKey } from '@components/resume-prov-list/constants';
+import { getResumeKey } from '@components/resume-list/constants';
 import axios from '@lib/axios';
-
 import { IPagedRequest, IPagedResponse, Resume, SchoolarShip } from '@lib/types';
-
-import { IPagedRequest, IPagedResponse, ResumeProv } from '@lib/types';
-
 import { useInfiniteQuery } from '@tanstack/react-query';
 import queryString from 'query-string';
 const initialRequest: IPagedRequest = {
@@ -12,11 +8,11 @@ const initialRequest: IPagedRequest = {
   pageSize: 30,
 };
 type UseUserListProps = {
-  filter?: Record<string, any>;
+  filter?: Record<string, string>;
 };
-export function useResumeProvList({ filter }: UseUserListProps) {
+export function useResumeList({ filter }: UseUserListProps) {
   return useInfiniteQuery({
-    queryKey: getResumeProvKey.list(filter),
+    queryKey: getResumeKey.list(filter),
     queryFn: ({ pageParam }) => {
       const paramsObj = {
         ...initialRequest,
@@ -24,21 +20,13 @@ export function useResumeProvList({ filter }: UseUserListProps) {
         status: filter?.status && new RegExp(filter.status, 'i'),
         name: filter?.name && new RegExp(filter.name, 'i'),
         email: filter?.email && new RegExp(filter.email, 'i'),
-        // provider: filter?.provider,
-
         'scholarship._id': filter?.scholarship,
-        populate: ['scholarship'],
+        populate: 'scholarship',
         fields: ['scholarship.name'],
-
-        'scholarProv._id': filter?.scholarship,
-        populate: ['scholarProv'],
-        fields: ['scholarProv.name'],
-
       };
       const qs = queryString.stringify(paramsObj, {
         skipEmptyString: true,
       });
-
       return axios
         .get<
           IPagedResponse<
@@ -46,11 +34,8 @@ export function useResumeProvList({ filter }: UseUserListProps) {
               scholarship: Pick<SchoolarShip, '_id' | 'name'>;
             }
           >
-        >(`/resume-prov?${qs}`)
+        >(`/resumes?${qs}`)
         .then((d) => d.data);
-
-      return axios.get<IPagedResponse<ResumeProv>>(`/resume-prov?${qs}`).then((d) => d.data);
-
     },
     initialPageParam: initialRequest.current,
     getNextPageParam: (lastPage) => {

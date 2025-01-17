@@ -91,6 +91,6 @@ export const LevelOptions = [
 ];
 
 export const getScholarShipKey = {
-  list: (filter?: Record<string, any>) => ['schoolar-ship', filter],
+  list: (filter?: Record<string, any>) => ['schoolar-ship', filter ?? {}],
   id: (id: string) => ['schoolar-ship', id],
 };
